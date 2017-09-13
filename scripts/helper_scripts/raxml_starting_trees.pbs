@@ -1,0 +1,62 @@
+#!/bin/bash
+#PBS -N StartingTree
+#PBS -m ea
+#PBS -M magitz@ufl.edu
+#PBS -o raxml.$PBS_JOBID.out
+#PBS -e raxml.$PBS_JOBID.err
+#PBS -l nodes=1:ppn=1
+#PBS -l pmem=4gb
+#PBS -l walltime=4:00:00
+#PBS -t 11-20
+#
+cd $PBS_O_WORKDIR
+ 
+# Load the raxml environment
+module load raxml
+
+mkdir starting_trees
+cd starting_trees
+
+########################################
+#Generate random starting trees  (-d)
+########################################
+
+#NT datasets########################################
+
+#raxmlHPC-SSE3 --no-seq-check -y -d -m GTRCAT -p $RANDOM -s ../cpDNA_ntFull.150823.phy.reduced  -n cpDNA.ntFull.150823.rand.$PBS_ARRAYID
+#raxmlHPC-SSE3 --no-seq-check -y -d -m GTRCAT -p $RANDOM -s ../cpDNA.nt.trim50.150708.phy  -n cpDNA.nt.trim50.150708.rand.$PBS_ARRAYID
+
+#1st and 2nd position dataset:
+#raxmlHPC-SSE3 --no-seq-check -y -d -m GTRCAT -p $RANDOM -s ../cpDNA.nt.150610.phy.pos1and2.fna.phy  -n cpDNA.nt.pos1and2.150708.randST.$PBS_ARRAYID
+#raxmlHPC-SSE3 --no-seq-check -y -d -m GTRCAT -p $RANDOM -s ../cpDNA.nt.50trim.150610.pos1and2.fna.phy  -n cpDNA.nt.trim50.pos1and2.150708.randST.$PBS_ARRAYID
+#
+#RY_coded, random and Parsimony:
+#raxmlHPC-SSE3 --no-seq-check -y -d -m GTRCAT -p $RANDOM -s ../cpDNA_ntFull.RYCoded.151016.phy.reduced  -n cpDNA_ntFull.RYCoded.151016.phy.randST.$PBS_ARRAYID
+#raxmlHPC-SSE3 --no-seq-check -y -m GTRCAT -p $RANDOM -s ../cpDNA_ntFull.RYCoded.151016.phy.reduced  -n cpDNA_ntFull.RYCoded.151016.phy.parsST.$PBS_ARRAYID
+
+#Random AA trees########################################
+#raxmlHPC-SSE3 --no-seq-check -y -d -m PROTCATAUTO -p $RANDOM -s ../cpDNA.aa.noJs.150929.phy.reduced -n cpDNA.aa.150930.rand.$PBS_ARRAYID
+#raxmlHPC-SSE3 --no-seq-check -y -d -m PROTCATAUTO -p $RANDOM -s ../cpDNA.aa.trim50.noJs.151015.phy.reduced -n cpDNA.aa.trim50.noJs.151015.rand.$PBS_ARRAYID
+
+#For toMatchNuc AA trees:
+raxmlHPC-SSE3 --no-seq-check -y -d -m PROTCATAUTO -p $RANDOM -s ../cpDNA.toMatchNuc.NoJs.151203.phy.reduced -n cpDNA.toMatchNuc.151203.rand.$PBS_ARRAYID
+
+########################################
+#Generate parsimony starting trees
+########################################
+
+#NT datasets########################################
+
+#raxmlHPC-SSE3 --no-seq-check -y -m GTRCAT -p $RANDOM -s ../cpDNA_ntFull.150823.phy.reduced -n cpDNA.ntFull.150823.pars.$PBS_ARRAYID
+#raxmlHPC-SSE3 --no-seq-check -y -m GTRCAT -p $RANDOM -s ../cpDNA.nt.trim50.150708.phy -n cpDNA.nt.trim50.150708.pars.$PBS_ARRAYID
+
+#Parsimony AA trees:########################################
+#raxmlHPC-SSE3 --no-seq-check -y -m PROTCATAUTO -p $RANDOM -s ../cpDNA.aa.noJs.150929.phy.reduced -n cpDNA.aa.150930.pars.$PBS_ARRAYID
+#raxmlHPC-SSE3 --no-seq-check -y -m PROTCATAUTO -p $RANDOM -s ../cpDNA.aa.trim50.noJs.151015.phy.reduced -n cpDNA.aa.trim50.noJs.151015.pars.$PBS_ARRAYID
+
+#For AA dataset Gymnos and Angios only
+#raxmlHPC-SSE3 --no-seq-check -y -d -m PROTCATAUTO -p $RANDOM -s ../cpDNA.aa.GymnoAngio.151016.phy.reduced -n cpDNA.aa.GymnoAngio.151016.randST.$PBS_ARRAYID
+#raxmlHPC-SSE3 --no-seq-check -y -m PROTCATAUTO -p $RANDOM -s ../cpDNA.aa.GymnoAngio.151016.phy.reduced -n cpDNA.aa.GymnoAngio.151016.parsST.$PBS_ARRAYID
+
+#For toMatchNuc AA trees:
+raxmlHPC-SSE3 --no-seq-check -y -m PROTCATAUTO -p $RANDOM -s ../cpDNA.toMatchNuc.NoJs.151203.phy.reduced -n cpDNA.toMatchNuc.151203.pars.$PBS_ARRAYID

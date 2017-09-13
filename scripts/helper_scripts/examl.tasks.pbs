@@ -1,0 +1,84 @@
+#!/bin/sh
+#PBS -m ae
+#PBS -M magitz@ufl.edu	
+#PBS -o MLsearch/ExaML.matchNuc.parST.out
+#PBS -N aa.parsST
+#PBS -j oe
+#PBS -l nodes=1:ppn=20
+#PBS -l pmem=2gb
+#PBS -l walltime=72:00:00
+##PBS -t 3
+# This job's working directory
+
+cd $PBS_O_WORKDIR
+
+#mkdir MLsearch
+cd MLsearch
+
+module load gcc/4.7.2  openmpi/1.6.5 examl/3.0.14 #Switch to system ExaML on 7/8/15
+# 
+# NT Trim 50 random trees.
+# mpiexec examl -a -D -f d -m GAMMA -n cpDNA.nt.50trim.randST.GAMMA.150709_$PBS_ARRAYID \
+# 	-p $RANDOM -s ../cpDNA.nt.trim50.150709.binary \
+# 	-t ../starting_trees/RAxML_randomTree.cpDNA.nt.trim50.150708.rand.$PBS_ARRAYID
+
+# NT Full random trees.
+# mpiexec examl -a -D -f d -m GAMMA -n cpDNA.nt.parsST.GAMMA.150823_$PBS_ARRAYID \
+# 	-p $RANDOM -s ../cpDNA_ntFull.150823.reduced.binary \
+# 	-t ../starting_trees/RAxML_parsimonyTree.cpDNA.ntFull.150823.pars.$PBS_ARRAYID #Run the Parsimony starting trees.
+# 	-t ../starting_trees/RAxML_randomTree.cpDNA.nt.150708.rand.$PBS_ARRAYID 
+
+# NT Trim 50 1st and 2nd position random trees
+# mpiexec examl -a -D -f d -m GAMMA -n cpDNA.nt.50trim.150708.pos1and2.randST.GAMMA.$PBS_ARRAYID \
+#  	-p $RANDOM -s ../cpDNA.nt.50trim.150708.pos1and2.binary \
+#  	-t ../starting_trees/RAxML_randomTree.cpDNA.nt.trim50.pos1and2.150708.randST.$PBS_ARRAYID
+
+# NT Full 1st and 2nd position random trees
+# mpiexec examl -a -D -f d -m GAMMA -n cpDNA.nt.150708.pos1and2.randST.GAMMA.$PBS_ARRAYID \
+#   	-p $RANDOM -s ../cpDNA.nt.150708.phy.pos1and2.binary\
+#   	-t ../starting_trees/RAxML_randomTree.cpDNA.nt.pos1and2.150708.randST.$PBS_ARRAYID
+
+# NT Full RY Coded random trees
+# mpiexec examl -a -D -f d -m GAMMA -n cpDNA.RY.151016.randST.GAMMA.$PBS_ARRAYID \
+#    	-p $RANDOM -s ../cpDNA_ntFull.RYCoded.151016.binary\
+#    	-t ../starting_trees/RAxML_randomTree.cpDNA_ntFull.RYCoded.151016.phy.randST.$PBS_ARRAYID
+
+# AA Trim 50 random trees.
+# mpiexec examl -a -D -f d -m PSR -n cpDNA.aa.50trim.randST.151015.$PBS_ARRAYID \
+# 	-p $RANDOM -s ../cpDNA.aa.trim50.noJs.151015.phy.reduced.binary -S \
+# 	-t ../starting_trees/RAxML_randomTree.cpDNA.aa.trim50.noJs.151015.rand.$PBS_ARRAYID
+
+#AA Fill random trees. 
+#  mpiexec examl -a -D -f d -m PSR -n cpDNA.aa.randST.150930.$PBS_ARRAYID \
+#  	-p $RANDOM -s ../cpDNA.aa.150930.binary -S \
+#  	-t ../starting_trees/RAxML_randomTree.cpDNA.aa.150930.rand.$PBS_ARRAYID
+	 
+	
+#AA GymnoAngio random trees. 
+# mpiexec examl -a -D -f d -m PSR -n cpDNA.aa.GymnoAngio.randST.151016.$PBS_ARRAYID \
+#   	-p $RANDOM -s ../cpDNA.aa.GymnoAngio.151016.binary -S \
+#   	-t ../starting_trees/RAxML_randomTree.cpDNA.aa.GymnoAngio.151016.randST.$PBS_ARRAYID
+
+
+
+#AA toMatchNuc More thorough search on ML Tree #3 
+mpiexec examl -a -f d -m PSR -n cpDNA.aa.toMatchNuc.MLtree3ST.151224 \
+  	-p $RANDOM -s ../cpDNA.toMatchNuc.NoJs.151203.phy.reduced.binary -S \
+ 	-t ExaML_result.cpDNA.aa.toMatchNuc.randST.151203.3
+ # 	-t ../starting_trees/RAxML_randomTree.cpDNA.toMatchNuc.151203.rand.$PBS_ARRAYID
+
+#Pars trees
+# mpiexec examl -a -D -f d -m PSR -n cpDNA.aa.toMatchNuc.parsST.151203.$PBS_ARRAYID \
+#    	-p $RANDOM -s ../cpDNA.toMatchNuc.NoJs.151203.phy.reduced.binary -S \
+#    	-t ../starting_trees/RAxML_parsimonyTree.cpDNA.toMatchNuc.151203.pars.$PBS_ARRAYID
+
+#################################################
+#Restart the above from checkpoint files:
+#################################################
+#Get last Checkpoint file
+# Checkpoint=`ls ExaML_binaryCheckpoint.cpDNA.RY.151016.randST.GAMMA.${PBS_ARRAYID}_* | tail -n1`
+# echo "Restarting from Checkpoint: $Checkpoint"
+# 
+# mpiexec examl -a -D -f d -m GAMMA -n cpDNA.RY.151016.randST.GAMMA.Restart.$PBS_ARRAYID \
+#    	-p $RANDOM -s ../cpDNA_ntFull.RYCoded.151016.binary\
+#   	-R $Checkpoint

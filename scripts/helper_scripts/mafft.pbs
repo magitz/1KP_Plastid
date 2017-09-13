@@ -1,0 +1,19 @@
+#!/bin/sh
+#PBS -m ae
+#PBS -M magitz@ufl.edu	
+#PBS -o $GENE.mafft.150904.out
+#PBS -j oe
+#PBS -l nodes=1:ppn=8
+#PBS -l pmem=3gb
+#PBS -l walltime=48:00:00
+#
+# This job's working directory
+cd $PBS_O_WORKDIR
+
+module load mafft
+
+#mafft-linsi --thread $PBS_NP --add $GENE.fna  ../../Brads_dataset/wOrders/nucleotide/$GENE.fna > ../wBradsGenBank/nucleotide/$GENE.nuc.mafft
+#mafft-linsi --thread $PBS_NP --add multiplesNbadRemoved/$GENE.faa  ../Brads_dataset/AA_dataset/individual_genes/noBlankTaxa/$GENE.faa > goodSeqs_mafftwBrads/$GENE.aa.mafft
+#mafft-linsi --thread $PBS_NP --seed ../Brads_dataset/AA_dataset/individual_genes/noBlankTaxa/noAmbig/$GENE.faa multiplesNbadRemoved/$GENE.faa > goodSeqs_seedmafftwBrads/$GENE.aa.mafft
+
+mafft-linsi --thread $PBS_NP $GENE.faa > $GENE.aa.mafft

@@ -1,0 +1,78 @@
+#!/bin/sh
+#PBS -m ae
+#PBS -M magitz@ufl.edu	
+#PBS -o BSanalysis/ExaML.BS.out
+#PBS -j oe
+#PBS -l nodes=1:ppn=12
+#PBS -l pmem=1gb
+#PBS -l walltime=96:00:00
+#PBS -t 71,83,85,87
+# This job's working directory
+
+cd $PBS_O_WORKDIR
+
+module load gcc/4.7.2  openmpi/1.6.5 examl #Switch to system ExaML on 7/8/15
+
+cd BSdata
+
+#Convert BS dataset to binary.
+#NT datasets:
+#~/MyApps/examl/ExaML/parser/parse-examl -s cpDNA.nt.50trim.150610.phy.BS$PBS_ARRAYID -m DNA -n cpDNA.nt.50trim.150610.BS$PBS_ARRAYID
+#~/MyApps/examl/ExaML/parser/parse-examl -s cpDNA.nt.150610.phy.reduced.BS$PBS_ARRAYID -m DNA -n cpDNA.nt.150610.BS$PBS_ARRAYID
+
+#AA Datasets:
+#parse-examl -s cpDNA.aa.trim50.noJs.151015.phy.reduced.BS$PBS_ARRAYID -m PROT -n cpDNA.aa.trim50.noJs.151015.phy.reduced.BS$PBS_ARRAYID
+#parse-examl -s cpDNA.aa.noJs.150929.phy.reduced.BS$PBS_ARRAYID -m PROT -n cpDNA.aa.noJs.150929.phy.reduced.BS$PBS_ARRAYID
+parse-examl -s cpDNA.toMatchNuc.NoJs.151203.phy.reduced.BS$PBS_ARRAYID -m PROT -n cpDNA.toMatchNuc.NoJs.151203.phy.reduced.BS$PBS_ARRAYID
+
+cd ../BSanalysis
+#cd BSanalysis
+#Get last Checkpoint file
+#Checkpoint=`ls ExaML_binaryCheckpoint.cpDNA.aa.noJs.150929.phy.reduced.BS${PBS_ARRAYID}_* | tail -n1`
+#echo "Restarting from Checkpoint: $Checkpoint"
+
+#We'll use one of the 10 random starting trees that we used for the ML search, picked at random here:
+STree=`shuf -i1-10 -n1`
+
+# 
+# NT Trim 50 random trees.
+# mpiexec ~/MyApps/examl/ExaML/examl/examl -a -D -f d -m GAMMA -n cpDNA.nt.50trim.randST.GAMMA.150610.BS$PBS_ARRAYID \
+# 	-p $RANDOM -s ../BSdata/cpDNA.nt.50trim.150610.BS$PBS_ARRAYID.binary \
+# 	-t ../starting_trees/RAxML_randomTree.cpDNA.nt.trim50.150620.randST.$STree
+
+#get last checkpoint for this run:
+#checkpoint=`ls -v ExaML_binaryCheckpoint.cpDNA.nt.randST.GAMMA.150610_BS${PBS_ARRAYID}_* | tail -n1`
+
+#echo Rerunning using checkpoint file: $checkpoint
+# NT Full random trees.
+#mpiexec examl -a -D -f d -m GAMMA -n cpDNA.nt.randST.GAMMA.150623_BS$PBS_ARRAYID \
+#	-p $RANDOM -s ../BSdata/cpDNA.nt.150610.BS$PBS_ARRAYID.binary \
+#	-R $checkpoint # Restart from last checkpoint file fore runs that ran out of time. Note need to change -n here too!!
+	#-t ../starting_trees/RAxML_randomTree.cpDNA.nt.150620.randST.$STree 
+
+# 
+ 
+# AA Trim 50 random trees.
+# mpiexec examl -a -D -f d -m PSR -n cpDNA.aa.50trim.randST.151015.BS$PBS_ARRAYID \
+#  	-p $RANDOM -s ../BSdata/cpDNA.aa.trim50.noJs.151015.phy.reduced.BS$PBS_ARRAYID.binary -S \
+#  	-t ../starting_trees/RAxML_randomTree.cpDNA.aa.trim50.noJs.151015.rand.$STree
+
+#AA Full random trees. 
+#mpiexec examl -a -D -f d -m PSR -n cpDNA.aa.noJs.150929.phy.reduced.BS$PBS_ARRAYID \
+# 	-p $RANDOM -s ../BSdata/cpDNA.aa.noJs.150929.phy.reduced.BS$PBS_ARRAYID.binary  -S \
+# 	-t ../starting_trees/RAxML_randomTree.cpDNA.aa.150930.rand.$STree
+
+# mpiexec examl -a -D -f d -m PSR -n cpDNA.aa.noJs.150929.phy.reduced_restart.BS$PBS_ARRAYID \
+#         -p $RANDOM -s ../BSdata/cpDNA.aa.noJs.150929.phy.reduced.BS$PBS_ARRAYID.binary  -S \
+# 	-R $Checkpoint 
+#      -t ../starting_trees/RAxML_randomTree.cpDNA.aa.150930.rand.$STree \
+
+
+#AA toMAtchNuc random trees. 
+mpiexec examl -a -D -f d -m PSR -n cpDNA.aa.toMatchNuc.BS$PBS_ARRAYID \
+	-p $RANDOM -s ../BSdata/cpDNA.toMatchNuc.NoJs.151203.phy.reduced.BS$PBS_ARRAYID.binary  -S \
+	-t ../starting_trees/RAxML_randomTree.cpDNA.toMatchNuc.151203.rand.$STree
+
+
+#Clean up the Binary checkpoint files for jobs that finish within the walltime and get here.
+rm ExaML_binaryCheckpoint.cpDNA.aa.noJs.150929.phy.reduced.BS${PBS_ARRAYID}_*

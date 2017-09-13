@@ -1,0 +1,83 @@
+#!/bin/sh
+#PBS -M magitz@ufl.edu
+#PBS -m ae
+#PBS -o Blastx/out/blast.$PBS_JOBID.o
+#PBS -j oe 
+#PBS -l walltime=36:00:00
+#PBS -l pmem=2000mb
+#PBS -l nodes=1:ppn=1
+########################################################
+# This script runs the blast search of a fasta file against a set of individual gene databases
+# The input file (passed in with the -v QUERY= option) will be blasted against each gene database
+# Also need to pass clade in.
+# Usage: qsub -v QUERY=path_to/query_name.fa,CLADE=clade_name
+#
+# Set the location and type of database below.
+#
+# Matt Gitzendanner
+# University of Florida
+# 
+# Version 1.0: May 6, 2014
+########################################################
+cd $PBS_O_WORKDIR
+
+########################################################
+# Set database and other information here.
+########################################################
+# Set reference gene dataset location here relative to working directory or absolute path.
+REF="$CLADE/AA_RefGeneFiles/"
+#REF="mtDNA.refs.Dec2014/"
+#
+# Set ending name for reference files, eg. .faa, .fasta, etc.
+#NOTE: Don't use nucleotide db, blastn output not compatible with downstream scripts.
+REF_ENDING=".faa"
+#
+# Set query sequence file ending, eg. .fna, .fa, etc.
+QUERY_ENDING=".fa"
+#
+#
+# Set path for blast results
+BLAST_PATH="${CLADE}/cpDNA_Dec2014/blasttable/"
+#BLAST_PATH="${CLADE}/mtDNA_Dec2014/Blast/blasttable/"
+mkdir -p $BLAST_PATH
+#
+########################################################
+
+module load ncbi_blast
+
+# Pass in query in qsub with -v QUERY=XXXX.fa
+query_name=`basename $QUERY ${QUERY_ENDING}`
+
+
+#For each reference gene file, blast query against it (need to run makeblastbd on the references first)
+gene_list=${REF}*${REF_ENDING}
+for i in $gene_list
+do
+	echo Working on $i
+	subject_name=`basename $i`
+
+	#test to see if blast database has already been made
+	db_file=$REF$subject_name\.pin
+	if [ ! -e "$db_file" ]; then	
+		#no blast database, need to make it:
+		makeblastdb -in $i -dbtype prot
+	fi
+	
+	subject_base=`basename $i ${REF_ENDING}`
+	
+	#make output folder if it's not there
+	out_path=$BLAST_PATH$subject_base/
+	if [ ! -e "$out_path" ]; then
+		mkdir -p $BLAST_PATH$subject_base/
+	fi
+	
+	
+	if [ ! -s "$BLAST_PATH$subject_base/$subject_base.$query_name.blast.out" ] #If there isn't any non-zero output for this gene for this taxon, do it.
+	then
+		#do the blast
+		blastx -evalue 1.0e-10 -db $i -query $QUERY -out $BLAST_PATH$subject_base/$subject_base.$query_name.blast.out -outfmt '6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qseq'
+	else
+		#Skip this one since there's already results.
+		echo "Skipping $query_name for $subject_base, already exists at: $BLAST_PATH$subject_base/$subject_base.$query_name.blast.out"
+	fi
+done
