@@ -1,24 +1,26 @@
 #!/usr/bin/perl
 # =====================================================
-# 1). This scripts creates a scaffold out of the mafft 
+# 1). This scripts creates a scaffold out of the mafft
 # alignments of othorgroup contigs (reference not included).
 # It assumes that the reference sequence is always the last
 # in the alignment - mafft fasta alignment format.
-# 2). Computes the coverage of the reference by the 
+# 2). Computes the coverage of the reference by the
 # constituent contigs excluding the "N" and "-" characters.
 # => coverage = bases covered / reference length
-# 3). Computes the divergence based on mismatches in the 
+# 3). Computes the divergence based on mismatches in the
 # overlapping regions of the contigs
 # 4). Gaps opened within contigs (excluding overhangs) are
-# not padded with "Ns", but deleted. Gaps opened between 
+# not padded with "Ns", but deleted. Gaps opened between
 # adjacent contigs are padded "Ns".
-# => divergence = mismtaches / total overlap length   
+# => divergence = mismtaches / total overlap length
 # INPUT = Parent directory containing ortho directories
 # OUTPUT = ortho scaffolds with coverage and divergence
-# on the definition line 
-# 
+# on the definition line
+#
 # Eric Wafula
 # 08/107/10
+
+# With modifications by Matt Gitzendanner
 # =====================================================
 
 #USAGE: 10_create_mafft_scaffold_MG.fixed.mvref.pl <SUMMARY_FILE> <infile> <outfile> <path for temp files> <file of divergent scaffolds>
@@ -33,11 +35,11 @@ if (!$ARGV[2]) {
     exit(1);
 }
 
-my $summary_file= $ARGV[0]; #  summary output file
-my $input= $ARGV[1];
-my $outfile=$ARGV[2];
-my $temp_path=$ARGV[3];
-my $divergent=$ARGV[4];
+my $summary_file= $ARGV[0]; #  Name for summary *output* file
+my $input= $ARGV[1]; # Input should be an aligment with reference sequence as the first sequence
+my $outfile=$ARGV[2]; # Name for output consensus sequence
+my $temp_path=$ARGV[3]; # Path to store temporary file.
+my $divergent=$ARGV[4]; # File to output divergent sequences: >0.05 divergence
 
 #print "Input file is: $input\n";
 #print "Outputfile is: $outfile\n";
@@ -47,7 +49,7 @@ my $divergent=$ARGV[4];
 
 #print "START - "; system "date"; #Based on prior runs, this takes about 1 second to run, we don't need all of this junk in the logs.
 
-# ====== open mafft alignment file and get the alignements ======
+# ====== open mafft alignment file and get the aligned sequences ======
 open (IN, "<$input") or die "Couldn't open $input file, $!";
 my @align = ();
 while (my $line = <IN>){
@@ -75,8 +77,9 @@ push(@align, $tempref);
 
 
 # ====== create an alignment base position matrix ========
+# ====== This is used to calculate the consesus sequence ====
 open (MATRIX, ">$temp_path/temp") or die "Couldn't open temp file, $!";
-foreach my $i (0..$#align-1){  
+foreach my $i (0..$#align-1){
 	my @elements = split(//,$align[$i]);
 	foreach my $j (0..$#elements){
 		if($j == $#elements){ print MATRIX "$elements[$j]\n";}
@@ -100,17 +103,17 @@ while(<MATRIX>) {
 	}
 	if ($num_out_rows != $#F+1) {
 		$unequal=1;
-		warn "\nWARNING! Rows in input had different numbers of columns\n" if $unequal; 
-		warn "\nTransposed table: result has $. columns and $num_out_rows rows\n\n"; 
-		exit(1);    
+		warn "\nWARNING! Rows in input had different numbers of columns\n" if $unequal;
+		warn "\nTransposed table: result has $. columns and $num_out_rows rows\n\n";
+		exit(1);
 	}
 }
 foreach my $row (@out_rows) {
-	print TMATRIX "$row\n"; 
+	print TMATRIX "$row\n";
 }
 close TMATRIX;
 close MATRIX;
-# ====== compute consesus sequence out alignment ======
+# ====== compute consesus sequence and output alignment ======
 open (TMATRIX, "<$temp_path/temp2") or die "Couldn't open temp2 file, $!";
 my $consensus = "";
 my $mismatches = 0;
@@ -129,7 +132,7 @@ while (<TMATRIX>){
 	while ($_ =~ /g/ig){$g++;}
 	while ($_ =~ /t/ig){$t++;}
 	while ($_ =~ /[^acgt]/ig){$e++;}
-	if (($x+$c+$g+$t) > 1){$overlap_len++;} 
+	if (($x+$c+$g+$t) > 1){$overlap_len++;}
 	if ($e == $#align){$consensus .= "N"; next;}
 	else {
 		my %hash = ("a", $x, "c", $c, "g", $g, "t", $t);
@@ -151,7 +154,7 @@ while (<TMATRIX>){
 					$tie = 0;
 					$hash2{$keys}=$count;
 					$tracker = $hash{$keys};
-					#$mismatches += $hash{$keys}; #original method 
+					#$mismatches += $hash{$keys}; #original method
 					if ($hash{$keys} > 0 ) {$mismatches++;} #MAG new method
 				}
 			}
@@ -180,9 +183,9 @@ close TMATRIX;
 my $coverage = 0;
 
 my @scfld = split (//, $consensus);
-my @ref = split (//, $align[$#align]); 
+my @ref = split (//, $align[$#align]);
 if ($#scfld == $#ref){
-	foreach my $l (0..$#scfld){if($scfld[$l] ne "N" and $ref[$l] ne "-"){$coverage++;}} 
+	foreach my $l (0..$#scfld){if($scfld[$l] ne "N" and $ref[$l] ne "-"){$coverage++;}}
 }
 else {print "SCAFFOLD AND REFERENCE ALIGNMENTS LENGTHS NOT PROPORTIONAL!!!..\n $#scfld \n $#ref\n"; exit(1);}
 my $reference = $align[$#align];
@@ -200,14 +203,16 @@ $divergence = sprintf("%.3f", $divergence);
 open (FILE, ">>$summary_file") or die "Couldn't open $summary_file, $!";
 open (DIVERGE, ">>$divergent") or die "Coudn't open $divergent, $!";
 
+# == Output divergent sequences to the $divergent file.
+# == Change the 0.05 below to use a different cutoff value.
 if ($divergence < 0.05){
 		if ($overlap_len == 0){print FILE "$input\t$coverage\tNO\tYES\n";}
 	else {print FILE "$input\t$coverage\t$divergence\tYES\n";}
-	
+
 	# # ============ open output fasta file ============
 	open (OUT, ">>$outfile") or die "Couldn't open $outfile file, $!";
 
-	
+
 	print OUT ">$input"."Coverage="."$coverage Divergence "."$divergence\n";
 	# remove within contig gaps
 	my %gaps;
@@ -215,10 +220,10 @@ if ($divergence < 0.05){
 		my $str = "$align[$n]";
 		my @array = split (//, $str);
 		for (my $p = 0; $p < $#array-1; $p++){if($array[$p] eq "-"){$array[$p] = "N";}else{last;}}
-		for (my $q = $#array; $q > -1; $q--){if($array[$q] eq "-"){$array[$q] = "N";}else{last;}}		 
+		for (my $q = $#array; $q > -1; $q--){if($array[$q] eq "-"){$array[$q] = "N";}else{last;}}
 		foreach my $m (0..$#array){
 			if ($array[$m] eq "-"){$gaps{$m}=$m;}
-		} 
+		}
 	}
 	foreach my $r (keys %gaps){
 		my %overhang;
