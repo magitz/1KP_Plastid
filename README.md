@@ -13,6 +13,8 @@ There is also a file called **Gitzendanner_etal_2018_GreenPlantTree.tree** which
 
 The **individual_genes** folder has the individual gene alignments. 
 
+The **1KP_nucelotide_data.tar.gz** file is a tar.gz file with all the individual gene nucleotide data.
+
 ## Scripts directory
 
 Within the scripts directory are the scripts that were used to process the 1KP transcriptome data. It should be emphasized that these scripts are provided to document what was done, not to make a generally applicable pipeline for generic datasets. Many steps in the scripts make assumptions about file and scaffold naming that will be specific to the 1KP project and data organization and cluster used in this paper. Many of the scripts will be helpful as starting points for others, but are not intended to be a readily deployable, general purpose pipeline.
